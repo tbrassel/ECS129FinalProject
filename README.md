@@ -1,2 +1,2 @@
 # ECS129FinalProject
-An imlementation of a program to calculate and compare protein structure energies.
+A simple Python program to calculate and compare protein structure energies.
