@@ -14,7 +14,7 @@ def frames(filePath):
     return df3
 
 if __name__ == '__main__':
-	name = ['model1.crd','model2.crd']
-	for i in range(len(name)):
-    		df = frames(name[i])
-    		pd.DataFrame.to_csv(df, path+name[i],index=False)
+    name = ['model1.crd','model2.crd']
+    for i in range(len(name)):
+    	df = frames(name[i])
+    	pd.DataFrame.to_csv(df, path+name[i],index=False)
