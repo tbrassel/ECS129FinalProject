@@ -1,4 +1,4 @@
-import dataframefunction as frames
+from dataframefunction import frames
 import pandas as pd
 import numpy as np
 import os
@@ -25,5 +25,8 @@ class Protein:
     def rename(self, name):
         self.name = input("Please enter a name: ")
 
-    def df(self, filePath):
-        self.df = frames(filePath)
+    def df(self, self.filePath, self.name):
+        self.df = frames(self.filePath, self.name)
+        
+if __name__=='__main__':
+    
