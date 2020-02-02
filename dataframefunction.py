@@ -1,12 +1,12 @@
 #Module for processing and managing the dataframe
 import pandas as pd
 
-def frames(filePath):
-    df = (pd.read_csv(filePath, skiprows = 2,delim_whitespace=True,header=None)).head(2288)
+def frames(filePath,name1,name2):
+    df = (pd.read_csv(filePath+name1, skiprows = 2,delim_whitespace=True,header=None)).head(2288)
     df.columns = ['i','X','Y','Z','R','Epsilon','Sigma','Charge','ASP','Atm_name','Res_name','Res']
     df.Res = df['Res'].astype(int)
     realcolumns = ['i','Nexclude','E_list','NA1','NA2','NA3','NA4','NA5','NA6','NA7','NA8','NA9']
-    df2 = (pd.read_csv(filePath, delim_whitespace=True,skiprows=2,header=None,names = realcolumns)).tail(2288)
+    df2 = (pd.read_csv(filePath+name2, delim_whitespace=True,skiprows=2,header=None,names = realcolumns)).tail(2288)
     df2['Combined'] = df2[realcolumns[2:]].apply(lambda x: [(int(val)-1) for val in x if not pd.isnull(val)], axis=1)
     df2 = df2.drop(realcolumns[2:12],axis  = 1)
     df3 = pd.merge(df,df2,on = ['i'])
