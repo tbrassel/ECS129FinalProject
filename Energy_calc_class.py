@@ -4,7 +4,7 @@
 import pandas as pd
 
 class Energy_calc:
-    def __self__(self, df1,df2):
+    def __init__(self, df1,df2):
         #pull down entire column
         self.epsilon1 = df1['Epsilon']
         self.epsilon2 = df2['Epsilon']
@@ -51,4 +51,4 @@ class Energy_calc:
 
     def Energy_diff(self):
         pass
-        #return min(Energy1, Energy2)
+        #return
