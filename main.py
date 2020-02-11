@@ -1,16 +1,18 @@
-#Main method, our actual executable file
-#call Energy calc class and dataframe class(object):
-
-#Todo: need extra class to define neighbor
-
+#Main method, our actual executable file 
+from dataframefunction import frames
 from protein_class import Protein
+import ecalc as e
+import pandas as pd
+import numpy as np
+import os
 
-path = ""
-model_name1 = ""
-model_name2 = ""
-protein1 = Protein(path, model_name1)
-protein2 = Protein(path, model_name2)
-
-Predicted_model = Engergy(protein1.dataframe, protein2.dataframe)
-
-result = Predicted_model.Energy_diff
+if __name__=='__main__':
+    path = "/home/tyler/ECS129FinalProjectInput/"
+    name = "model1.crd"
+    protein1 = Protein(filePath=path, name=name)
+    print(protein1) #__repr__#
+    dftest = protein1.dataframe() #dataframe stored into variable in this form
+    print(dftest) #check output
+    protein1_energy = e.energy(dftest) 
+    print(f"{name} has an energy value of {protein1_energy}")
+    

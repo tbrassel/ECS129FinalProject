@@ -13,14 +13,14 @@ class Protein:
     # Returns the name of the protein and the file path associated with it
     # just print the object that been assigned with the class
     def __repr__(self):
-        return "%s: %s" % (self.name, self.filePath)
+        return f"{self.filePath}: {self.name}"
 
     def setPath(self, filePath):
         try:
             with os.path.exists(filePath):
                 self.filePath = filePath
         except IOError:
-            return "Please pass a valid file path, {} does not exist".format(self.filePath)
+            return f"Please pass a valid file path, {self.filePath} does not exist"
 
     def rename(self, name):
         self.name = input("Please enter names of models to compare in tuple: ")
@@ -28,10 +28,3 @@ class Protein:
     def dataframe(self):
         return frames(self.filePath, self.name)
         
-if __name__=='__main__':
-    path = '/Users/mac/Desktop/'
-    name = 'model1.crd'
-    test = Protein(path, name)
-    print(test) #__repr__#
-    dftest = test.dataframe() #dataframe stored into variable in this form
-    print(dftest) #check output
