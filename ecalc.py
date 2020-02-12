@@ -90,7 +90,3 @@ def energy(protein):
         # Protein energy is the sum of Van-der-Waals and Solvation energies
         energy = np.sum(vdw(df)) + np.sum(solvation(df))
         return energy
-    
-    
-    
-    
