@@ -13,6 +13,6 @@ if __name__=='__main__':
     print(protein1) #__repr__#
     dftest = protein1.dataframe() #dataframe stored into variable in this form
     print(dftest) #check output
-    protein1_energy = e.energy(dftest) 
+    protein1_energy = e.energy(protein1) 
     print(f"{name} has an energy value of {protein1_energy}")
     
