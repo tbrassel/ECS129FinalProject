@@ -60,10 +60,10 @@ def vdw(df):
     sigma_div_dist = np.divide(sigma(), distance())
     charge_div_dist = np.divide(charge(), distance())
     part1 = np.multiply(epsilon(), 
-                    (np.power(sigma_div_dist, 12.0) - 
-                     np.multiply(np.power(sigma_div_dist, 6.0), 2.0)))
+                       (np.power(sigma_div_dist, 12.0) - 
+                        np.multiply(np.power(sigma_div_dist, 6.0), 2.0)))
     part2 = np.multiply(charge_div_dist, 
-                        (1.0 / (4.0 * math.pi * 8.8541878128E-12 * 4.0)))
+                       (1.0 / (4.0 * math.pi * 8.8541878128E-12 * 4.0)))
     flag = mask(df)
     vdw_matrix = part1 + part2
     vdw_processed = np.multiply(flag, vdw_matrix)
