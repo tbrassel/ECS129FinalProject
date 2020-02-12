@@ -16,7 +16,7 @@ def vdw(df):
     
     # Returns a euclidean distance matrix between all pairs of atoms given the X, 
     # Y, and Z coordinates for each atom.
-    def distance(x, y, z):
+    def distance(x=x, y=y, z=z):
         x_matrix = np.subtract.outer(x, x).T
         y_matrix = np.subtract.outer(y, y).T
         z_matrix = np.subtract.outer(z, z).T
