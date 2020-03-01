@@ -4,15 +4,27 @@ import os
 from functools import reduce
 
 def frames(filePath, name):
-    df = (pd.read_csv(filePath+name, skiprows = 2,delim_whitespace=True,header=None, index_col=None)).head(2288)
+    file = open(filePath+name)
+    number_of_rows =int(file.readline())
+    file.close()
+    df = (pd.read_csv(filePath+name, skiprows = 2,delim_whitespace=True,header=None, index_col=None)).head(number_of_rows)
+    df2 = (pd.read_csv(filePath+name, delim_whitespace=True,skiprows=2,header=None)).tail(number_of_rows)
+    try:
+        if len(df.columns) == 13 and len(df2.columns) == 13:
+            df.drop(df.columns[-2],axis=1,inplace=True)
+            df2.drop(df.columns[-2],axis=1,inplace=True)
+        elif len(df.columns) == 12 and len(df2.columns) == 12:
+            pass
+    except ValueError:
+        raise "please keep a constant input shape"
     df.columns = ['i','X','Y','Z','R','Epsilon','Sigma','Charge','ASP','Atm_name','Res_name','Res']
-    df.Res = df['Res'].astype(int)
     realcolumns = ['i','Nexclude','E_list','NA1','NA2','NA3','NA4','NA5','NA6','NA7','NA8','NA9']
-    df2 = (pd.read_csv(filePath+name, delim_whitespace=True,skiprows=2,header=None,names = realcolumns)).tail(2288)
+    df2.columns = realcolumns
+    df.Res = df['Res'].astype(int)
     df2['Combined'] = df2[realcolumns[2:]].apply(lambda x: [(int(val)-1) for val in x if not pd.isnull(val)], axis=1)
-    df2 = df2.drop(realcolumns[2:12],axis  = 1)
+    df2.drop(realcolumns[2:12],axis  = 1, inplace=True)
     df3 = pd.merge(df,df2,on = ['i'])
-    df3 = df3.drop(['i'],axis = 1)
+    df3.drop(['i'],axis = 1,inplace = True)
     return df3
 
 def get_sanitized_input(path_to_dir):
