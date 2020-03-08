@@ -1,4 +1,5 @@
 from protein_class import Protein
+from dataframefunction import check_if_crd
 import pandas as pd
 import ecalc as e
 from functools import reduce
@@ -16,20 +17,21 @@ def make_dictionary(rootdir, subfolders: bool, summary: bool):
     print(f"This is rootdir: {rootdir}")
     start = rootdir.rfind(os.sep) + 1
     print(f"This is start: {start}")
-    types = list() #.crd
-    energies = list()
-    indexes = list()
+    #types = list() #.crd
     values = list()
-    mod_files = list() #stores the filenames
+    indexes = list()
+    #mod_files = list() #stores the filenames
     for path, dirs, files in os.walk(rootdir, topdown=True):
+        energies = list()
         folders = path[start:].split(os.sep)
         print(f"These are the folders: {folders}")
-        for i in range(0, len(files)):
-           split = os.path.splitext(files[i])
-           mod_files.append(split[0])
-           types.append(split[1])
+        check, mod_files, types = check_if_crd(path)
+        #for i in range(0, len(files)):
+           #split = os.path.splitext(files[i])
+           #mod_files.append(split[0])
+           #types.append(split[1])
            
-        files.sort(key=lambda f: int(re.sub('\D', '', f))) #Returns the names in ascending numerical order
+        #files.sort(key=lambda f: int(re.sub('\D', '', f))) #Returns the names in ascending numerical order
         #If we have walked the first parent folder and are looping through the subfolders, calculate energies
         if((len(folders)>1 and subfolders)): 
             sub_path = os.path.join(rootdir, folders[1]+os.sep)
@@ -86,6 +88,7 @@ def make_dictionary(rootdir, subfolders: bool, summary: bool):
             print(f"These are the modfiles: {mod_files}")
     if(summary==True):
         df = pd.DataFrame(data=values, index=indexes, columns = ["Model", "Energy (kcal/mol)"])
+        df = pd.DataFrame.sort_index(df, axis=0)
         
     return dir1, df
 
