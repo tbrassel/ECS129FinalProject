@@ -69,7 +69,7 @@ if __name__=='__main__':
     robetta_summary_df.to_csv('Robetta_Summary.csv', header=True, index=True, index_label = False) 
     
     trRosetta_summary_df= trRosetta_summary[1]
-    trRosetta_summary_df.to_csv('Robetta_Summary.csv', header=True, index=True, index_label = False) 
+    trRosetta_summary_df.to_csv('trRosetta_Summary.csv', header=True, index=True, index_label = False) 
     
     concat_output = final_comparison_df(df1 = robetta_summary_df, df2 = trRosetta_summary_df)
     concat_output.to_csv('Final_Summary.csv', header=True, index=True, index_label = False) 

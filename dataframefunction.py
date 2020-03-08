@@ -29,7 +29,6 @@ def frames(filePath, name):
 
 def final_comparison_df(df1, df2):
     concat_output = pd.DataFrame()
-    print(f"I ran")
     for i in range(0, (len(df1))):
        value1 = df1.iloc[i, 1] 
        value2 = df2.iloc[i, 1]
