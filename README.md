@@ -12,5 +12,5 @@ Protein sturctures are visualized and compared using [SwissPdb Viewer](https://s
 
 ## Team
 - __Tyler Brassel__: Ecalc functions. Pipeline builder.
-- __Xinzhe Li__: peotein selection, visualization
+- __Xinzhe Li__: protein selection, visualization
 - __Yinuo Zhang__: pdb clean ups
