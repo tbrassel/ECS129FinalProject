@@ -1,4 +1,4 @@
-# ECS129FinalProject
+# ECS129 Final Project: Computing the Energy of a Protein Structure
 A simple interactive Python program to calculate and compare protein structure energies.
 
 ## Protein selection
