@@ -17,7 +17,8 @@ considering the sample size is not large (special adjustment will be listed belo
 **ENSG00000115263 needs some manual adjustment to enable all 3 official pdbs to be run**
 
 ## Special adjustments 
-**(needs to be run in single file command with manual adjustment)**
+**(needs to be run in single file command with manual adjustment)**<br/>
+**where to change is annotated in cleanup.py**
  
 ### ENSG00000092009
 used pdb id 3N7O
