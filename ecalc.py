@@ -2,10 +2,10 @@
 import numpy as np
 import math as math
 
-# Computes the leftmost all-by-all sum in the given formula, including the flag 
+# First, computes the leftmost all-by-all sum in the given formula, including the flag 
 # function implemented by a mask matrix, to compute the Van-der-Waals energy.
 def vdw(df):
-    # Pull out and format arrays to convert to processed matrices
+    # Pull out and format arrays to convert to processed matrices.
     x = np.array(df["X"]).astype(float)
     y = np.array(df["Y"]).astype(float)
     z = np.array(df["Z"]).astype(float)
@@ -25,7 +25,7 @@ def vdw(df):
                                   + np.square(z_matrix))
         return distance_matrix
 
-    # Returns a matrix of the sigma value 
+    # Returns a symmetrical matrix of the sigma value. 
     def sigma(sigma=sigma):
         sigma_matrix = np.add.outer(sigma, sigma)
         sigma_matrix = np.divide(sigma, 2)
@@ -37,7 +37,7 @@ def vdw(df):
         epsilon_matrix = np.sqrt(epsilon)
         return epsilon_matrix
 
-    # Returns an element-wise multiplication matrix of the charge for all pairs of atoms
+    # Returns an element-wise multiplication matrix of the electrostatic charge for all pairs of atoms
     def charge(charge=charge):
         charge_matrix = np.multiply.outer(charge,charge)
         return charge_matrix
@@ -59,15 +59,19 @@ def vdw(df):
     # Combine each sub matrix and process with the flag operator
     sigma_div_dist = np.divide(sigma(), distance())
     charge_div_dist = np.divide(charge(), distance())
+    # Combine each subcalculation
     part1 = np.multiply(epsilon(), 
-                       (np.power(sigma_div_dist, 12.0) - 
-                        np.multiply(np.power(sigma_div_dist, 6.0), 2.0)))
+                    (np.power(sigma_div_dist, 12.0) - 
+                     np.multiply(np.power(sigma_div_dist, 6.0), 2.0)))
     part2 = np.multiply(charge_div_dist, 
-                       (1.0 / (4.0 * math.pi * 8.8541878128E-12 * 4.0)))
+                        (1.0 / (4.0 * math.pi * 8.8541878128E-12 * 4.0)))
     flag = mask(df)
     vdw_matrix = part1 + part2
+    # Apply the flag operator using the mask matrix.
     vdw_processed = np.multiply(flag, vdw_matrix)
+    # Since the matrix is symmetrical along the diagonal k=0, make all values including the diagonal zero to count all pairs once.
     vdw_trimmed = np.triu(vdw_processed, k=1)
+    # Return this correctly zeroed matrix.
     return vdw_trimmed
     
 # Returns the solvation energy as a sum of the element-wise product of the
@@ -85,8 +89,13 @@ def solvation(df):
 # take a list of protein objects and output a properly formatted text file. 
 def energy(protein):
     df = protein.dataframe()
-    # Catch divide by zero and invalid value errors when running.
-    with np.errstate(divide='ignore', invalid='ignore'): 
-        # Protein energy is the sum of Van-der-Waals and Solvation energies
-        energy = np.sum(vdw(df)) + np.sum(solvation(df))
-        return energy
+    # Catch divide by zero and invalid value errors when running. Numpy add signs to zeros.
+    with np.errstate(divide='ignore', invalid='ignore'):
+        # Calculate histogram
+        vdw_energies = vdw(df)
+        solvation_energies = solvation(df)
+        # Protein energy is the sum of Van-der-Waals and Solvation energies/
+        energy = np.sum(vdw_energies) + np.sum(solvation_energies)
+        # Convert the vdw matrix into a 1d list of numbers to visualize the distribution of energies using histograms. 
+        vdw_energies = np.triu_indices(len(vdw_energies), 1)
+        return energy, vdw_energies, solvation_energies
