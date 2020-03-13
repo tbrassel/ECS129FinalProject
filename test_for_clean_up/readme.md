@@ -12,6 +12,7 @@ Special official pdbs that didn't have 100% sequence identity with the sequence 
 considering the sample size is not large (special adjustment will be listed below).
 
 **The input files must be in the same directory as the python code**<br/>
+ (All inputs are already put in the same directory)<br/>
 **The output files are stored in version3.zip**<br/>
 **The offical pdbs are stored in official folder**<br/>
 **ENSG00000115263 needs some manual adjustment to enable all 3 official pdbs to be run**
@@ -37,7 +38,8 @@ DHNLQLCVGNPRKTKSAFKGDSGGPLLCAG```V```AQGIVSYGRSDAKPPAVFTRISHY```R```PWINQILQAN
 all 4 published model used a different isoform than ours, so didn't collect data for this protein
 
 ### ENSG00000115263:
-Manually modify the official pdb input for this protein
+Manually modify the official pdb input for this protein within the code
+by moving the corresponding pdb outside out the official folder<br/>
 Actually there're 3 pieces,<br/> 
 Piece C have perfect match. Site 146-178 2l63 NMR<br/>
 Piece B have perfect match: Site 98-127 1D0R NMR<br/>
