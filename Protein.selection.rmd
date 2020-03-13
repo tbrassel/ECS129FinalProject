@@ -1,0 +1,25 @@
+---
+title: "Protein_selection"
+output: html_document
+---
+###########################################################
+Loading in the input table
+###########################################################
+#Input: A table containing ACE interacting genes and their transcript length
+
+```{r}
+genes=read.table(file="~/Documents/ACE_interacting_gene_transcript_length.txt", sep="\t", header=T)
+```
+
+#Divide transcript length by three to get an approximation on AA chain length of transcript and add the transcript length column into the original loaded table
+
+```{r}
+ApproximateAA.length=genes$Transcript.length..including.UTRs.and.CDS./3
+genes=cbind(genes, ApproximateAA.length)
+```
+
+#Extract gene names based on th specified AA lengths at 200AAs and 400 AAs
+```{r}
+genes.200=unique(genes[which(genes$ApproximateAA.length<200),1])
+genes.400=unique(genes[which(genes$ApproximateAA.length<400),1])
+setdiff(genes.400,genes.200)
