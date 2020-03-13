@@ -17,6 +17,6 @@ Protein sturctures are visualized and compared using [SwissPdb Viewer](https://s
 We requested the conversion of many pdb files to crd. All of these files are contained within the zip archive titled "Platform_Analysis_Input" should one wish to replicate our data analysis.
 
 ## Team
-- __Tyler Brassel__: Ecalc functions. Pipeline builder.
-- __Xinzhe Li__: protein selection, visualization
-- __Yinuo Zhang__: pdb clean ups, data frame processing
+- __Tyler Brassel__: Built pipeline and main method.
+- __Xinzhe Li__: Managed protein selection and visualization.
+- __Yinuo Zhang__: Performed pdb clean ups and data frame processing.
