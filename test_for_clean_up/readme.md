@@ -1,15 +1,25 @@
 # clean ups
 code runs with python 3.7
 
-**important package to be installed** [biopython 1.73](https://biopython.org/wiki/Download)
+**important package to be installed** [biopython 1.73](https://biopython.org/wiki/Download)<br/>
+<br/>
+**For official pdb clean up**: <br/>
+If there're multiple models for the protein, only keep the first model;<br/>
+If there're multiple chains, only keep chain A;<br/>
+If there're HETATM ATOMS, ignore.<br/>
+Delete hydrogen atoms.<br/> 
+<br/>
+**For predicted file clean up**: <br/>
+Pick out sequences that matches the exact order and amino acids from cleaned_up_official pdbs (only one model and chain A).<br/>
+Delete hydrogen atoms.<br/> 
 
-To run cleanup.py, move into this directory, if it's a single file that needs clean up, use command
-```python cleanup.py```
-To run all the file in files.txt (containing both official and predicted pdb names):
+To run cleanup.py, move into this directory, if it's a single file that needs clean up, use command<br/>
+```python cleanup.py```<br/>
+To run all the file in files.txt (containing both official and predicted pdb names):<br/>
 ```python cleanup.py files.txt```
 
-Special official pdbs that didn't have 100% sequence identity with the sequence we sent for server prediction needs manual input, 
-considering the sample size is not large (special adjustment will be listed below).
+Special official pdbs that didn't have the same protein sequence with the sequence we sent for server prediction needs manual input, 
+considering the sample size is not large (special adjustment will be listed below). The differ in sequence may due to different isoforms.
 
 **The input files must be in the same directory as the python code**<br/>
  (All inputs are already put in the same directory)<br/>
