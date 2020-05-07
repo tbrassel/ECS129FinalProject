@@ -1,0 +1,260 @@
+---
+title: "ECS 129 Final Project Report: Computing the Energy of a Protein Structure"
+author: "Tyler Brassel, Xinzhe Li, Yinuo Zhang"
+date: "March 13th, 2020"
+indent: true
+header-includes:
+   - \setlength\parindent{24pt}\setlength{\parskip}{0.0pt plus 1.0pt}
+output:
+  html_document:
+    highlight: tango
+    number_sections: no
+    theme: lumen
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+require("knitr")
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+```{r library, message = FALSE, echo=FALSE}
+library(dplyr)
+library(readr)
+library(data.table)
+library(gdata)
+```
+
+## **Introduction**
+***
+##### Determining the biological function of a protein given its sequence remains an important challenge in Biology. The biological function of a protein is tied to its three-dimensional structure. Although experimental methods like NMR and X-ray crystallography can generate promising high-resolution structural information, a large fraction of proteins still have unconfirmed structures. Therefore, the utilization of computational power to give the best possible predictions of structures will imply some biological insights on proteins whose 3D structures are unknown (Rohl et al., 2004).
+##### Among the current protein structure prediction methods, when structural templates and domain information for proteins are not available, ab initio (or de novo) predictions are heavily deployed for hypothesized models from amino acid sequence (Rohl et al., 2004). Since ab initio methods often involve local energy minimized optimization, the corresponding algorithms rely on the energy functions built to model the real protein interactions (Baker et al., 2001; Rohl et al., 2004). Within those available algorithms, there contains an energy function for evaluating which predicted PDB files are among the best to model the real protein structure. In this work, we will evaluate the provided Energy function (ECALC) to energy evaluation functions used in Robetta and trRosetta.
+##### We have also implemented the Ecalc in a high throughput pipeline manner for easy future calculation that allowed us to compute protein energy from PDBs produced by different servers. To validify our implementation of energy calculation algorithms and in consideration of the current COVID-19 pandemic, we  conducted our studies surrounding the receptor protein for virus, angiotensin-converting enzyme 2 (ACE2), and its possible interactive targets (Yan et al., 2020). 
+##### In our report, we first compared the deviation between PDB files scored best with Ecalc and the energy scoring function implemented in each server.  . We then compared how much deviation there are between the published PDBs for the proteins against the PDBs that scored best by the servers’ energy function and Ecalc respectively.  This comparison essentially allowed us to compare which servers provided us the best PDBs and how Ecalc performs in comparison to servers’ stock Energy scoring function.
+
+## **Algorithm Design**
+***
+### **Model Speed, Parameters, and Assumptions**
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/energy_equation.png")
+```
+
+##### [Our model is an implementation of the above equation](https://github.com/tbrassel/ECS129FinalProject), which can be broken down into the sum of two parts: 1) an all-by-all sum of the Van der Waals energy and electrostatics energy of all pairs of atoms excluding bonded interactions, and 2) the element-wise sum of the solvation energy contributed by each atom. This sum is equal to the internal energy of the protein and is expressed in units of kilocalories per mol (kcal/mol). Instead of using for loops in an interpreted language like Python which has a heavy computational cost(O(n<sup>2</sup>)), we implemented a factorized approach with Numpy library to take advantage of its lower level precompiled C code. In addition, Numpy offers the ability to convert many lines of iterative code into a few lines of vectorized code, whereby array broadcasting can simplify iterative matrix operations. This helps with the readability of our algorithm implemented in the file `ecalc.py`.
+##### The aforementioned sum of two parts is implemented via the `energy()` function. This function uses the protein class and its associated methods to generate a more easily accessible data frame using programs under `dataframefunction.py`. This formatted input is passed to the two helper functions `vdw()` and `solvation()` to compute the Van der Waals energy and solvation energy respectively. When calculating the Van der Waals energy, we employed the most accurate constants known to us: pi, E<sub>0</sub> (permittivity of free space), and E<sub>r</sub> (dielectric constant for water): 3.141592653589793, 8.8541878128x10<sup>-12</sup>, and 4.0 respectively. However, not all parameters are known with the same degree of accuracy (e.g.: dielectric constant for water is only given to one decimal place). Given this information, we report our calculated energy values out to as many decimal places as possible for an approximation of Energy function. 
+
+```{r, echo=FALSE, out.height="75%", out.width="75%"}
+include_graphics("./Images/solvation_assumption.png")
+```
+
+##### Additional approximations are made when our model calculates the solvation energy of a protein, shown here as the product of the given Atomic Solvation Parameter for each atom (ASP<sub>i</sub>) and the Accessible Surface Area (ASA<sub>i</sub>). We assume that the accessible surface area as a function of the given Van der Waals radius of the atom i and the radius of a water molecule. While a more accurate solvation energy would be a good improvement, the solvation energy is much smaller than the Van der Waals energy and does not impact the total protein energy as significantly.
+
+## **Method**
+***
+
+### **ACE2 Interacting Protein Selection**
+##### We downloaded 350 interactions between proteins centered around ACE2 proteins directly from the [STRING](https://string-db.org/) protein database search tool that had a medium confidence score larger than 0.4. We then extracted the protein names from different interactions as input for [Biomart](http://www.biomart.org/) to recover both gene ID and its transcript length. To limit the visualization complexity and server computational time, we largely limited our investigation to proteins with smaller amino acid chain length. Through the filtering process, we reduced proteins of interest from 350 to 10 proteins in total for submission to [Robetta](http://robetta.bakerlab.org/) and [trRosetta](https://yanglab.nankai.edu.cn/trRosetta/help/) servers. 
+
+### **trRosetta Server**
+##### Transform-restrained Rosetta (trRosetta) Server is maintained by Dr. Yang’s lab with NanKai University. The server in the algorithm makes use of multiple sequence alignment as well as inter-residue orientations prediction (Yang et al., 2020). On top of the original framework of the Rosetta centroid level energy function, probability distributions of distance and orientation are included as constraints (Yang et al., 2020). With the more refined energy function, plus deep learning-based training and prediction steps, trRosetta is considered to be improvement over the standard Rosetta algorithm (Yang et al., 2020).
+
+### **Robetta Server**
+##### Robetta server was chosen for PDB prediction alongside with trRosetta Server due to their vastly different energy algorithm. Contrasting the machine learning backed protein structural model predictions that were published more recently such as the alpha fold(Senior et al. 2020) or its open source counterpart Prospr(Billings et al.), Robetta represents a more classic approach for protein prediction as it implements protein structural prediction based on scoring metrics that reward 3D constructions that contain protein features (Kim et. al., 2014). Robetta also implements an atom refinement step (RELAXED algorithm) that allows further fine-tuning of models before arriving at the final prediction (Simon et al., 2014).  
+
+### **Protein Comparison and Visualization**
+##### Protein visualization software (Swiss-PDB Viewer) (Guex & Peitsch, 1997) was directly downloaded onto Windows Operating System for processing downstream PDB files and calculating root mean square distance (RMSD) with more details described below for each experiment. 
+
+### **PDB selection with respect to server algorithm and Ecalc formula**
+##### Out of the five PDB models predicted by the server, we selected the PDB with the lowest total scores as our best server PDB. We then used the Ecalc algorithm to compute the energy for the same five PDB models for each protein predicted by the server and selected the model with the lowest energy value as our best Ecalc formula predicted PDB (best Ecalc PDB). 
+
+### **PDB clean ups**
+##### We searched NMR or X-ray confirmed PDBs for chain A proteins on Uniprot and RCSB. Among 9 proteins (ACE2 and 8 correlated proteins), we were able to find 6 proteins that had pdb published that used protein sequences highly similar to the sequence we sent to servers (see Table 1). They were considered as our protein cohort. We preferred X-ray confirmed PDBs over NMR confirmed PDBs, and we prefered official pdbs that used the exact same sequence as our pdb sequence. When both requirements were met, we selected the official model with lowest resolution. We designed our own clean up algorithm using Biopython package to remove hydrogen atoms and select only chain A for both server and official pdbs (Cock et al., 2009). The output of the server cleaned-up pdbs and official cleaned-up pdbs had exactly the same order and number of amino acid residues. If the official pdbs were using a different isoform than our input amino acid sequences, we manually adjusted the code to make sure that the two sets of pdbs at least had the same number of residues’ alpha carbons and had most of the amino acid order remained.
+
+### **Comparison between best server PDB and best Ecalc PDB**
+##### For both Robetta and trRosetta servers, when best server PDB and best Ecalc PDB disagrees, both PDB files are loaded into Swiss-PDB viewer program for visualization and root mean square (RMS) distance calculation. For easy visualization, both PDB files are first globally aligned with ⍺-carbon using the “magic fit” option followed by side chains atoms removal and 3D rendering. All atoms are colored accordingly (yellow: best server predicted; white: best Ecalc predicted) for better separation between models. Screenshots for the global alignments are obtained using the Snipping Tool program in Windows. RMS calculation after global alignment were obtained and summarized in the table below.
+
+### **Comparison between beset server PDB and best Ecalc PDB against published PDB**
+##### For all available subsetted PDB files, we compared both best server PDBs and best Ecalc PDBs against published PDBs for comparison between server energy algorithms and Ecalc algorithms benchmarked with officially published subsetted PDB files released for the proteins. The PDBs are processed similar to comparison between best server PDB and best Ecalc PDB mentioned above except the all published PDBs are colored with red and the PDBs under investigation are colored with yellow. All pairwise comparisons are summarized in the table below.
+
+## **Result**
+***
+### **Analysis of Provided Examples**
+##### As a test case for our algorithm, we were provided the files model1.crd and model2.crd, which we determined to have the energies -7107650094.47459 kcal/mol and -2138481113.7377896 kcal/mol respectively. When determining the energy of a protein, it is important to examine the energy contribution of each pair of atoms for unexpectedly large values. This could indicate one region of the proposed model is of poorer quality that the same region in the other proposed model, perhaps because certain residues are too close together. To this end we attempted to plot the distribution of Van der Waals energies on a histogram. However, we encountered a stack overflow error in R which did not allow us to plot the values. Even when we attempted to increase the C stack limit from the console, R still returned an error. When we analyzed the distribution in Python we could see that model2.crd has a longer tail at the higher end of the energy distribution than model1.crd. This result makes sense given our energy calculation. The outliers in model2 result in a much greater energy value than model1. Therefore we can conclude that model1.crd is a better prediction of the given protein structure than model2.crd when analyzed using our implementation. 
+
+### **Eight ACE2 Interacting Proteins Selected For Analysis**
+##### 350 ACE interacting proteins were found from the STRING database with moderate overall confidence in interaction. Out of the 350 proteins, 8 were selected based on amino acid length for consideration of computational time and decreased visualization complexity. Out of the eight selected proteins, six were under 200 amino acids in length and two were under 400 amino acids in length. We then used our own clean up algorithms to make available PDBs comparative for visualization. 
+
+### **trRosetta bears more resemblance to the provided Energy Calculation Algorithm than Robetta**
+##### Employing both structural alignment and root mean square distance (RMSD) calculation given our cleaned up protein cohort, we showed that Robetta’s best server predicted PDBs deviates drastically from Ecalc best predicted PDBs, with both a higher RMSD mean(19.355Å) and range (46.82Å) between PDBs best predicted by server and Ecalc. For trRosetta server outputs, the mean RMSD between server prediction and Ecalc was substantially smaller at 5.912Å, with a reduced range of 9.26Å. Therefore, we hypothesized that the server algorithm employed by trRosetta tended to derive at a more similar conclusion as Ecalc.
+##### Since globally aligned RMSD could not be treated as a metric for evaluation without prior knowledge on local alignment (Koehl, *Structure Alignment*). We also conducted pairwise structural alignment on all disagreeing best server predicted PDBs and best Ecalc predicted PDBs shown with images down below. From the aligned structures, we can gain a visual understanding that trRosetta predicted structures align much better visually than Robetta outputs do. To exclude biasing toward server algorithms due to internal variations between trRosetta and Robetta, we visually assessed the PDB files predicted via both platforms to confirm structural variations between PDB files. Both the visualization models (figure 1) and RMSD calculations (Table1) are summarized below. 
+
+#### {.tabset .tabset-pills}
+##### Robetta
+```{r, echo=FALSE}
+table_1 <- read_tsv('table1firstquestion.tsv')
+kable(table_1)
+```
+
+##### trRosetta
+```{r, echo=FALSE}
+table_2 <- read_tsv('table2question1.tsv')
+kable(table_2)
+```
+
+##### PDB IDs
+```{r, echo=FALSE}
+table_6 <- read_tsv('pdbids_Sheet1.tsv')
+kable(table_6)
+```
+
+#### {.tabset .tabset-pills}
+##### ENSG00000185883
+```{r, echo=FALSE, out.height="75%", out.width="100%"}
+include_graphics("./Images/ENSG00000185883trRosettaservervsEcalc.PNG")
+include_graphics("./Images/ENSG00000185883RobettaEcalcvsServer.PNG")
+```
+
+##### ENSG00000159224
+```{r, echo=FALSE, out.height="75%", out.width="100%"}
+include_graphics("./Images/trRosettaENSG00000159224servervsEcalc.PNG")
+include_graphics("./Images/RobettaENSG00000159224servervsEcalc.PNG")
+```
+
+##### ENSG00000130234
+```{r, echo=FALSE, out.height="75%", out.width="100%"}
+include_graphics("./Images/RosettaservervsEcalcACE2.PNG")
+include_graphics("./Images/RobettaservervsEcalcACE2.PNG")
+```
+
+### 
+*Figure 1: proteins superimposed on each other (yellow=server predicted best, white=Ecalc predicted best)*
+
+### **trRosetta Predicted protein structure better compared to Robetta**
+##### Pulling results from both Rosetta and Robetta servers, we have found that the trRosetta outperforms Robetta for our protein cohort, with a substantially better accuracy in predicting ACE2 protein (best server prediction by trRosetta vs Robetta: 5.53Å vs 38.42Å) (Table2). Moreover, we can visually verify the difference between ACE2 alignments as the protruded ACE2 protein arm predicted by Robetta failed to superimpose with any domains in published ACE2 proteins (figure 2, yellow extended arm). 
+##### On the other hand, visually, two PDBs from Ecalc and Servers’ choices from trRosetta server both showed major structural overlapping with the official protein structure. Considering both calculation and visualization both support the Robetta has made a poor structural prediction over ACE2 protein compared to trRosetta, we hypothesize trRosetta might hold an advantage over longer amino acid structural prediction. For our remaining proteins that we were not able to find officially published PDBs, we thus hypothesized that structures predicted from trRosetta were more promising compared to Robetta models. 
+
+#### {.tabset .tabset-pills}
+##### Robetta
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/Copyofofficial_vs_Robetta_best_server.png")
+```
+
+##### trRosetta
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/Copyofofficial_vs_trRosetta_best_server.png")
+```
+
+###
+*Figure 2: Superimposed ACE2 protein prediction by servers Robetta and trRosetta*
+
+### **Provided Ecalc Algorithm is a better metric for predicting protein structure**
+##### When Ecalc and servers’ prediction disagrees, we compare both trRosetta and Robetta PDBs to investigate if Ecalc selected PDBs outperforms server selected PDBs compared to empirically determined (X-ray Crystallography or NMR)  published PDBs. Comparing across 20 PDB files, we realized that PDB models with lower score in Ecalc have a moderately decreased RMSD with published protein structures in comparison to the PDBs with lowest total scores from servers’ algorithms. This effect is more exaggerated in ACE2 protein, which could mean the employing Ecalc rather than servers’ algorithm might produce a better prediction for proteins with longer chain size. However, in the current study, we are underpowered to statistically analyze advantages of each algorithm with large proteins. 
+
+### {.tabset .tabset-pills}
+#### Robetta
+```{r, echo=FALSE}
+table_3 <- read_tsv('robettatable2.tsv')
+kable(table_3)
+```
+
+#### trRosetta
+```{r, echo=FALSE}
+table_4 <- read_tsv('trRosettatable2.tsv')
+kable(table_4)
+```
+
+### **Robetta** {.tabset .tabset-pills}
+#### ENSG00000159224 {.tabset .tabset-pills}
+##### Ecalc
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/official_vs_Robetta_Ecalc5.PNG")
+```
+
+##### Server
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/official_vs_Robetta_best_server6.PNG")
+```
+
+#### ENSG00000130234 {.tabset .tabset-pills}
+##### Ecalc
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/official_vs_Robetta_best_Ecalc8.PNG")
+```
+
+##### Server
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/official_vs_Robetta_best_server7.PNG")
+```
+
+### **trRosetta** {.tabset .tabset-pills}
+#### ENSG00000159224 {.tabset .tabset-pills}
+##### Ecalc
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/official_vs_trRosetta_best_Ecalc2.PNG")
+```
+
+##### Server
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/official_vs_trRosetta_best_server1.PNG")
+```
+
+#### ENSG00000130234 {.tabset .tabset-pills}
+##### Ecalc
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/ENSG0000092009trServer_vs_official3.PNG")
+```
+
+##### Server
+```{r, echo=FALSE, out.height="100%", out.width="100%"}
+include_graphics("./Images/ENSG0000092009_trEcalc_vs_official4.PNG")
+```
+
+### 
+*Figure 3: proteins superimposed on each other (red=published PDB, yellow=compared PDB specified on tab). PDBs generated by Robetta (top), trRosetta (bottom)*
+
+## **Discussion**
+***
+### **Conclusion**
+##### Our results suggested that Ecalc and trRosetta tended to generate consistent predictions over the best protein structure. Given the cohort of ACE2 related proteins, trRosetta generated more promising models that were closer to the NMR or X-ray Crystallography observed structures in contrast to Robetta’s poor structure alignments. However, after the models were generated, Ecalc could select even better models that make the protein closer to the officially confirmed structures. Therefore, combining our results together, to get the best predicted model for ab initio construction of proteins, we suggested generating models with trRosetta and then use Ecalc to select from those predictions. Moreover, since the Ecalc is shown applicable in both servers, it is possible that Ecalc could be generalized to other servers and act as a possible replacement algorithm for selecting best possible predictions. 
+
+### **Future Improvements**
+##### The accuracy of our method can be improved further though the inclusion of the energy contributed from all torsion angles and bond angles for each protein (Koehl, *Biomolecular Simulations*). While this may be more accurate, we advise caution when implementing these calculations as the amount of computational time and resources for our program could increase drastically. In fact, both servers we used to predict protein structure took days to complete submitted jobs, even when leveraging powerful server resources. 
+##### Another approach to improve accuracy would be using a more accurate estimation of the accessible surface area of the protein. It would be our future goal to use an integrative approach that includes these better approximations of accessible surface area e.g: molecular shell methods, molecular skin method, as well as the main method described by Edelsbrunner and Koehl in their study titled The Geometry of Biomolecular Solvation on our existing pipeline implemented framework. In addition, while Numpy may be an efficiently compiled implementation of the provided equation, Numpy operations only run on one CPU core. In the future, provided with more time and resources, we can implement computations on multiple CPU cores or a GPU. Using NVIDIA’s CUDA based CuPy library, parallel computation could improve our current computational speed drastically. However, as it currently stands, our algorithm implementation on a single CPU core was more than sufficient to complete an analysis of 80 files in under 3 minutes. 
+##### Other than possible performance boost, we also show that further testing could be done to grant us certainty if the Ecalc algorithm performs better in the proteins on longer amino acid chains. We also need to further test broad applications on if Ecalc is applicable to platforms other than trRosetta and Robetta. 
+
+## **User Manual**
+***
+### **Instructions and Use Cases** 
+##### To use our algorithm, you will need to run the file named `main.py`, which depends on the custom modules `dataframefunction.py`, `ecalc.py`, `dict_output.py`, as well as the class `protein_class.py`. Upon running, the user is greeted with a friendly message as well as instructions to enter “q” or “quit” at any input prompt to quit the program. The user is then asked to enter either a “1” should they wish to run a standalone analysis or one or more files, or “2” should they wish to replicate our results for the platform wide analysis. The program will repeat each input prompt until the user enters an expected input or decides to quit the program.
+##### Selecting “1” will prompt the user to enter a Unix path to a directory where multiple .crd files for analysis are stored, or the direct path to one .crd file. Users have the option of placing several predicted .crd files for analysis into a folder labeled with the protein name, then passing that folder path to the program. The program will then automatically iterate through each .crd file in the directory. To analyze multiple proteins at once, arrange the input directory to have labeled folders for each protein containing one or more .crd files for analysis, then pass the parent folder containing the subfolders to the program. The program will then automatically iterate through the directory structure and calculate the output of each .crd file in every directory present in the parent directory. 
+##### Once the user has entered a file path which does not meet any error conditions, and if that path is a directory, the user will be asked if this directory contains other directories, here referred to more commonly as subfolders. It is important that the user enter the correct option for their passed in directory structure, otherwise the analysis may not work properly, as the program will not detect if the user selects the wrong option. Once the user has made their selection the program starts a timer and runs the analysis. Program analysis is accomplished by calling the function `make_dictionary()` which is part of the module `dict_output`. The make_dictionary function takes a file path as input and returns an ordered dictionary with the .crd file name as the key and the energies of those models as the values, grouped by the name of the folder the files were extracted from, as well as a pandas dataframe of the information summarizing the model with the least energy for each subfolder. The output key and value pairs are then presented in ascending order based on the energy value. This way the user can quickly assess which .crd file represents the protein with the lowest energy conformation according to our model implementation by looking at the first value of the corresponding dictionary entry. Once the analysis is complete, the timer is stopped and the program tells the user how long the analysis took to run. The ordered dictionary is saved to the current working directory as a JSON file with the name “final_dict_output”, while the summary data frame is saved as a CSV titled “final_df_output”.
+##### While the user needs to make sure they tell the program if their input directory contains subfolders, they do not need to make sure that their input directory only contains .crd files. The `dict_output` function automatically extracts the paths to the .crd files in a directory and calculates the energies accordingly using the helper function `check_if_crd’. In addition, the verbose nature of the `dict_output` function allows the user to see the construction of the output dictionary in real time, alerting them to any errors early in the analysis process. 
+##### If the input path for a standalone analysis leads directly to a file, the user will not be asked if the file contains subfolders. The system checks if the specified file is a .crd file. If it is, it computes the energy of the protein, as well as the individual Van der Waals energy values for all pairs of atoms as well as the solvation energies contributed by each atom. This is important to allow for the visual examination of the distribution of the energies in the files. See the next section for an in-depth analysis. The protein energy is stored as the first and only value in a CSV file, while the other two Numpy arrays are saved to plain text files, all in the current working directory. The system then outputs the time it took to run the analysis as well as a summary of the protein name and energy.
+##### While the options for standalone analysis are extensive, replicating our platform wide analysis by selecting option “2” is more straightforward. We have packaged the .crd files we used for analysis in a .zip archive in our project github repository titled “Platform_Analysis_Input”. Contained within are the two folders the program expects as input: “ECS129_Robetta_crd” and “ECS129_trRosetta_crd”. Similarly to the standalone analysis the program automatically checks that the paths exist and are not empty before continuing with the analysis. The program then outputs the summary dataframes for each platform titled “Robetta_Summary.csv” and “trRosetta_Summary.csv”, which indicate the predicted model with the lowest energy for each of the 8 query proteins. It also outputs a summary of these summary dataframes, comparing like proteins across platforms to pick the platform which gives the lowest energy value. Our method determined that Robetta produced protein structures with the least energy as compared to trRosetta. Finally, the program lets the user know when it is finished saving the files and outputs the time it took to run the analysis.
+
+### **Error Handling and Control Flow**
+##### Before running any analysis, the program checks for several different error conditions. First, it checks if the path entered exists. If it does not exist, the program will return an error. Then it checks if the path entered leads to a directory or a file. If the user passes in a directory, but that directory is empty, the program will again return an error. Finally, if the user enters a file path, the program will check to see if the file is in fact a .crd file, and return an error if this is not the case. After all error conditions the program brings the user back to the input prompt to try again
+##### At the end of the analysis, the program asks the user if they would like to run another analysis. The user is passed this prompt if they enter “q” or “quit” at any prompt except the first, where the program quits entirely if either is input. This allows the user to easily start over if they make a typographical error. 
+##### While our program attempts to be fairly fault tolerant, the user needs to be aware that repeated analyses without removal of finished output from the current working directory will possibly result in those files being overwritten, as the program assigns fixed names to the output files. The user should check their working directory after every run and remove the output before continuing with another analysis. 
+***
+
+## **Bibliography**
+- Rohl, C. A., Strauss, C. E., Misura, K. M., & Baker, D. (2004). Protein structure prediction using Rosetta. In Methods in enzymology (Vol. 383, pp. 66-93). Academic Press.
+- Yan, R., Zhang, Y., Li, Y., Xia, L., Guo, Y., & Zhou, Q. (2020). Structural basis for the recognition of the SARS-CoV-2 by full-length human ACE2. Science.
+- Baker, David, and Andrej Sali. "Protein structure prediction and structural genomics." Science 294.5540 (2001): 93-96.
+- Yang, J., Anishchenko, I., Park, H., Peng, Z., Ovchinnikov, S., & Baker, D. (2020). Improved protein structure prediction using predicted interresidue orientations. Proceedings of the National Academy of Sciences.
+- Guex, Nicolas, and Manuel C. Peitsch. "SWISS‐MODEL and the Swiss‐PDB Viewer: an environment for comparative protein modeling." electrophoresis 18.15 (1997): 2714-2723.
+- Cock, P. J., Antao, T., Chang, J. T., Chapman, B. A., Cox, C. J., Dalke, A., ... & De Hoon, M. J. (2009). Biopython: freely available Python tools for computational molecular biology and bioinformatics. Bioinformatics, 25(11), 1422-1423.
+- Senior, A. W., Evans, R., Jumper, J., Kirkpatrick, J., Sifre, L., Green, T., ... & Penedones, H. (2020). Improved protein structure prediction using potentials from deep learning. Nature, 1-5.
+- Billings, W. M., Hedelius, B., Millecam, T., Wingate, D., & Della Corte, D. (2019). ProSPr: Democratized Implementation of Alphafold Protein Distance Prediction Network. BioRxiv, 830273.
+- E. Kim, D. (2014, October). Abinitio Relax. https://www.rosettacommons.org/docs/latest/application_documentation/structure_prediction/abinitio-relax
+- Edelsbrunner, H., & Koehl, P. (n.d.). The Geometry of Biomolecular Solvation. 34.
+
+
+
+
