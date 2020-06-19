@@ -11,10 +11,10 @@ Protein are selected using R script. R studio will support the ```Protein.select
 Official pdb clean ups and server-predicted pdb clean ups can be find in clean_up folder
 
 ## Visualization of protein sturcture
-Protein sturctures are visualized and compared using [SwissPdb Viewer](https://spdbv.vital-it.ch/). 
+Protein structures are visualized and compared using [SwissPdb Viewer](https://spdbv.vital-it.ch/). 
 
 ## Reproducing our Results
-We requested the conversion of many pdb files to crd. All of these files are contained within the zip archive titled "Platform_Analysis_Input" should one wish to replicate our data analysis.
+We requested the conversion of many pdb files to .crd format. All of these files are contained within the zip archive titled "Platform_Analysis_Input" should one wish to replicate our data analysis.
 
 ## Team
 - __Tyler Brassel__: Built pipeline and main method.
